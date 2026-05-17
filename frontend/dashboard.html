@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Serengeti NP Crime Dashboard</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+margin:0;
+display:flex;
+font-family:Arial;
+background:#eef2f5;
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar{
+width:320px;
+background:linear-gradient(180deg,#0b3d2e,#145a32,#1e8449);
+color:white;
+padding:15px;
+height:100vh;
+overflow:auto;
+box-shadow:0 0 10px rgba(0,0,0,0.3);
+}
+
+.sidebar h2{
+color:#ffd700;
+text-align:center;
+margin-top:0;
+}
+
+.sidebar button,
+.sidebar select,
+.sidebar input{
+width:100%;
+padding:10px;
+margin-top:8px;
+border-radius:6px;
+border:none;
+font-size:14px;
+}
+
+.sidebar button{
+background:#27ae60;
+color:white;
+font-weight:bold;
+cursor:pointer;
+transition:0.3s;
+}
+
+.sidebar button:hover{
+background:#2ecc71;
+}
+
+/* ================= MAP ================= */
+
+#map{
+flex:1;
+height:100vh;
+}
+
+/* ================= POPUP ================= */
+
+.leaflet-popup-content{
+font-size:14px;
+line-height:1.5;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ================= SIDEBAR ================= -->
+
+<div class="sidebar">
+
+<h2>Serengeti NP Crime Dashboard</h2>
+
+<button onclick="location.href='/crime-form'">
+📝 Crime Form
+</button>
+
+<button onclick="location.href='/logout'">
+🚪 Logout
+</button>
+
+<hr>
+
+<button onclick="toggleHeatmap()">
+🔥 Heatmap ON/OFF
+</button>
+
+<hr>
+
+<select id="filterType"></select>
+
+<input type="date" id="fromDate">
+
+<input type="date" id="toDate">
+
+<button onclick="applyFilters()">
+📌 Apply Filter
+</button>
+
+<button onclick="resetFilters()">
+♻ Reset
+</button>
+
+<hr>
+
+<button onclick="exportGeoJSON()">
+📥 Export GeoJSON
+</button>
+
+<button onclick="exportKML()">
+📥 Export KML
+</button>
+
+<hr>
+
+<h3>📊 GIS Analytics</h3>
+
+<div id="totalCrimes">Total Crimes: 0</div>
+<div id="topCrime">Top Crime: -</div>
+<div id="latestCrime">Latest Crime: -</div>
+
+<br>
+
+<canvas id="crimeChart"
+height="220"
+style="
+background:rgba(0,0,0,0.2);
+border-radius:10px;
+padding:10px;
+">
+</canvas>
+
+</div>
+
+<!-- ================= MAP ================= -->
+
+<div id="map"></div>
+
+<script>
+
+/* =========================================================
+MAP
+========================================================= */
+
+let map = L.map('map').setView([-2.5, 34.9], 7);
+
+/* =========================================================
+BASE LAYERS
+========================================================= */
+
+// OSM
+let osm = L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+attribution:'© OpenStreetMap'
+}
+);
+
+// SATELLITE
+let satellite = L.tileLayer(
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+{
+attribution:'Tiles © Esri'
+}
+);
+
+// LABELS
+let labels = L.tileLayer(
+'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+{
+attribution:'Labels © Esri'
+}
+);
+
+// HYBRID
+let hybrid = L.layerGroup([satellite, labels]);
+
+// DEFAULT
+hybrid.addTo(map);
+
+/* =========================================================
+LAYER CONTROL
+========================================================= */
+
+L.control.layers({
+
+"🗺 OSM": osm,
+"🛰 Satellite": satellite,
+"🌍 Labels": labels,
+"🌐 Hybrid": hybrid
+
+}, null, {
+
+collapsed:false
+
+}).addTo(map);
+
+/* =========================================================
+VARIABLES
+========================================================= */
+
+let allData = [];
+let markersLayer;
+let heatLayer;
+let heatEnabled = false;
+let crimeChart;
+
+/* =========================================================
+GEOFENCE
+========================================================= */
+
+fetch('/serengeti_boundary.geojson')
+
+.then(r=>r.json())
+
+.then(g=>{
+
+L.geoJSON(g,{
+
+style:{
+color:"#00ff00",
+weight:3,
+fillColor:"#00aa00",
+fillOpacity:0.25
+}
+
+}).addTo(map);
+
+});
+
+/* =========================================================
+LOAD DATA
+========================================================= */
+
+async function loadData(){
+
+allData = await fetch('/criminals')
+.then(r=>r.json());
+
+render(allData);
+
+loadCrimeTypes();
+
+updateAnalytics(allData);
+
+}
+
+loadData();
+
+/* =========================================================
+RENDER MARKERS
+========================================================= */
+
+function render(data){
+
+if(markersLayer){
+map.removeLayer(markersLayer);
+}
+
+markersLayer = L.layerGroup().addTo(map);
+
+data.forEach(c=>{
+
+if(!c.coord_lat || !c.coord_lng) return;
+
+L.marker([c.coord_lat, c.coord_lng],{
+
+icon:getIcon(c.case_type)
+
+})
+
+.addTo(markersLayer)
+
+.bindPopup(`
+
+<div style="min-width:250px;">
+
+<h3 style="margin:0;color:darkred;">
+${c.case_type || "-"}
+</h3>
+
+<hr>
+
+<b>Full Name:</b>
+${c.full_name || "-"}<br>
+
+<b>Alias:</b>
+${c.also_known_as || "-"}<br>
+
+<b>Gender:</b>
+${c.gender || "-"}<br>
+
+<b>Age:</b>
+${c.age || "-"}<br>
+
+<b>Tribe:</b>
+${c.tribe || "-"}<br>
+
+<b>Village:</b>
+${c.village || "-"}<br>
+
+<b>Ward:</b>
+${c.ward || "-"}<br>
+
+<b>District:</b>
+${c.district || "-"}<br>
+
+<b>Region:</b>
+${c.region || "-"}<br>
+
+<hr>
+
+<b>Crime Type:</b>
+${c.case_type || "-"}<br>
+
+<b>Weapons Used:</b>
+${c.weapons_used || "-"}<br>
+
+<b>Area of Arrest:</b>
+${c.area_of_arrest || "-"}<br>
+
+<b>Case Number:</b>
+${c.case_number || "-"}<br>
+
+<b>Court Status:</b>
+${c.court_status || "-"}<br>
+
+<b>Sentence:</b>
+${c.sentence || "-"}<br>
+
+<hr>
+
+<button
+onclick="deleteIncident(${c.id})"
+style="
+background:red;
+color:white;
+border:none;
+padding:8px;
+width:100%;
+cursor:pointer;
+border-radius:5px;
+">
+Delete Incident
+</button>
+
+</div>
+
+`);
+
+});
+
+}
+
+/* =========================================================
+DELETE INCIDENT
+========================================================= */
+
+async function deleteIncident(id){
+
+if(!confirm("Delete this incident?")) return;
+
+await fetch('/criminals/' + id, {
+method:'DELETE'
+});
+
+loadData();
+
+}
+
+/* =========================================================
+SMALL MARKER ICONS
+========================================================= */
+
+function getIcon(type){
+
+let color="green";
+
+if(type && type.includes("Fishing")) color="blue";
+else if(type && type.includes("Mining")) color="gray";
+else if(type && type.includes("Poaching")) color="red";
+else if(type && type.includes("Logging")) color="brown";
+else if(type && type.includes("Grazing")) color="orange";
+else if(type && type.includes("Trafficking")) color="purple";
+
+return L.icon({
+
+iconUrl:
+`https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
+
+shadowUrl:
+'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+
+/* SMALLER ICON SIZE */
+iconSize:[18,30],
+
+/* ICON POSITION */
+iconAnchor:[9,30],
+
+/* POPUP POSITION */
+popupAnchor:[0,-28],
+
+/* SHADOW SIZE */
+shadowSize:[30,30]
+
+});
+
+}
+
+/* =========================================================
+LOAD ALL CRIME TYPES
+========================================================= */
+
+function loadCrimeTypes(){
+
+let select = document.getElementById("filterType");
+
+select.innerHTML =
+`<option value="">All Crime Types</option>`;
+
+let types =
+[...new Set(
+
+allData
+.map(c => c.case_type)
+.filter(t => t && t.trim() !== "")
+
+)];
+
+types.sort();
+
+types.forEach(type=>{
+
+select.innerHTML +=
+`
+<option value="${type}">
+${type}
+</option>
+`;
+
+});
+
+}
+
+/* =========================================================
+HEATMAP
+========================================================= */
+
+function toggleHeatmap(){
+
+if(!heatEnabled){
+
+let pts = allData
+.filter(c=>c.coord_lat && c.coord_lng)
+.map(c=>[
+c.coord_lat,
+c.coord_lng,
+1
+]);
+
+heatLayer = L.heatLayer(pts,{
+radius:25
+}).addTo(map);
+
+heatEnabled = true;
+
+}else{
+
+map.removeLayer(heatLayer);
+
+heatEnabled = false;
+
+}
+
+}
+
+/* =========================================================
+FILTER
+========================================================= */
+
+function applyFilters(){
+
+let t =
+document.getElementById("filterType").value;
+
+let f =
+document.getElementById("fromDate").value;
+
+let to =
+document.getElementById("toDate").value;
+
+let filtered = allData.filter(c=>{
+
+let okT = !t || c.case_type===t;
+
+let okD = true;
+
+if(f && c.date_of_arrest){
+
+okD =
+new Date(c.date_of_arrest)
+>= new Date(f);
+
+}
+
+if(to && c.date_of_arrest){
+
+okD =
+new Date(c.date_of_arrest)
+<= new Date(to);
+
+}
+
+return okT && okD;
+
+});
+
+render(filtered);
+
+updateAnalytics(filtered);
+
+}
+
+/* =========================================================
+RESET
+========================================================= */
+
+function resetFilters(){
+
+document.getElementById("filterType").value="";
+document.getElementById("fromDate").value="";
+document.getElementById("toDate").value="";
+
+render(allData);
+
+updateAnalytics(allData);
+
+}
+
+/* =========================================================
+EXPORT GEOJSON
+========================================================= */
+
+function exportGeoJSON(){
+
+let geo = {
+
+type:"FeatureCollection",
+
+features:allData
+.filter(c=>c.coord_lat && c.coord_lng)
+.map(c=>({
+
+type:"Feature",
+
+geometry:{
+type:"Point",
+coordinates:[
+c.coord_lng,
+c.coord_lat
+]
+},
+
+properties:c
+
+}))
+
+};
+
+download(
+"crime_data.geojson",
+JSON.stringify(geo)
+);
+
+}
+
+/* =========================================================
+EXPORT KML
+========================================================= */
+
+function exportKML(){
+
+let kml =
+`<?xml version="1.0"?>
+<kml>
+<Document>`;
+
+allData.forEach(c=>{
+
+if(!c.coord_lat || !c.coord_lng) return;
+
+kml += `
+<Placemark>
+
+<name>${c.case_type}</name>
+
+<Point>
+<coordinates>
+${c.coord_lng},
+${c.coord_lat}
+</coordinates>
+</Point>
+
+</Placemark>
+`;
+
+});
+
+kml += `
+</Document>
+</kml>`;
+
+download("crime_data.kml", kml);
+
+}
+
+/* =========================================================
+DOWNLOAD
+========================================================= */
+
+function download(name,data){
+
+let a = document.createElement("a");
+
+a.href =
+URL.createObjectURL(new Blob([data]));
+
+a.download = name;
+
+a.click();
+
+}
+
+/* =========================================================
+ANALYTICS
+========================================================= */
+
+function updateAnalytics(data){
+
+document.getElementById("totalCrimes")
+.innerText =
+"Total Crimes: " + data.length;
+
+let freq = {};
+
+data.forEach(c=>{
+
+if(!c.case_type) return;
+
+freq[c.case_type] =
+(freq[c.case_type] || 0) + 1;
+
+});
+
+let top="-";
+let max=0;
+
+for(let k in freq){
+
+if(freq[k] > max){
+
+max = freq[k];
+top = k;
+
+}
+
+}
+
+document.getElementById("topCrime")
+.innerText =
+"Top Crime: " + top;
+
+document.getElementById("latestCrime")
+.innerText =
+"Latest: " +
+(data[0]?.case_type || "-");
+
+let labels = Object.keys(freq);
+let values = Object.values(freq);
+
+if(crimeChart)
+crimeChart.destroy();
+
+crimeChart = new Chart(
+
+document.getElementById("crimeChart"),
+
+{
+type:"bar",
+
+data:{
+labels:labels,
+
+datasets:[{
+
+label:"Crime Incidents",
+
+data:values,
+
+backgroundColor:
+"rgba(255,215,0,0.8)",
+
+borderColor:"#ffffff",
+
+borderWidth:1
+
+}]
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+legend:{
+labels:{
+color:"#ffffff"
+}
+}
+},
+
+scales:{
+
+x:{
+ticks:{
+color:"#ffffff"
+},
+grid:{
+color:"rgba(255,255,255,0.1)"
+}
+},
+
+y:{
+ticks:{
+color:"#ffffff"
+},
+grid:{
+color:"rgba(255,255,255,0.1)"
+}
+}
+
+}
+
+}
+
+});
+
+}
+
+</script>
+
+</body>
+</html>

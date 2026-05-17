@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Serengeti NP Crime Registration Form</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:20px;
+}
+
+.box{
+max-width:1000px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:10px;
+}
+
+input,select,button,textarea{
+width:100%;
+padding:10px;
+margin-top:8px;
+border-radius:5px;
+border:1px solid #ccc;
+}
+
+button{
+background:green;
+color:white;
+border:none;
+cursor:pointer;
+font-weight:bold;
+}
+
+h2{
+color:green;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+
+<button onclick="location.href='/dashboard'">
+Go Dashboard
+</button>
+
+<h2>Serengeti NP Crime Registration Form</h2>
+
+<input id="full_name" placeholder="Full Name">
+
+<input id="also_known_as" placeholder="Also Known As">
+
+<input id="tribe" placeholder="Tribe">
+
+<input id="age" placeholder="Age">
+
+<select id="gender">
+<option value="">Select Gender</option>
+<option>Male</option>
+<option>Female</option>
+</select>
+
+<input id="marital_status" placeholder="Marital Status">
+
+<input id="village" placeholder="Village">
+
+<input id="ward" placeholder="Ward">
+
+<input id="district" placeholder="District">
+
+<input id="region" placeholder="Region">
+
+<input id="weapons_used" placeholder="Weapons Used">
+
+<input id="area_of_arrest" placeholder="Area of Arrest">
+
+<input id="lat" placeholder="Latitude">
+
+<input id="lng" placeholder="Longitude">
+
+<input id="witnesses" placeholder="Witnesses">
+
+<select id="case_type">
+
+<option value="">Select Crime Type</option>
+
+<option>Illegal Fishing</option>
+<option>Illegal Grazing</option>
+<option>Illegal Mining</option>
+
+<option>Poaching (Subsistence)</option>
+<option>Poaching (Commercial)</option>
+<option>Poaching (Ivory/Horn)</option>
+
+<option>Bushmeat Hunting</option>
+
+<option>Night Hunting</option>
+
+<option>Snaring / Traps</option>
+
+<option>Wildlife Trafficking</option>
+
+<option>Deforestation</option>
+
+<option>Illegal Logging</option>
+
+<option>Poisoning</option>
+
+<option>Human-Wildlife Conflict</option>
+
+<option>Illegal Entry</option>
+
+<option>Encroachment</option>
+
+<option>Vehicle Off-road Damage</option>
+
+<option>Weapon Possession (Illegal)</option>
+
+<option>Arson / Burning Vegetation</option>
+
+</select>
+
+<input id="case_number" placeholder="Case Number">
+
+<input id="court_status" placeholder="Court Status">
+
+<input id="sentence" placeholder="Sentence">
+
+<input type="date" id="date_of_arrest">
+
+<input type="file" id="file" style="display:none">
+
+<button onclick="document.getElementById('file').click()">
+Upload Photo
+</button>
+
+<input
+id="photo"
+readonly
+placeholder="Photo filename">
+
+<button onclick="submitCrime()">
+Submit Incident
+</button>
+
+</div>
+
+<script>
+
+/* =========================
+PHOTO PICKER
+========================= */
+
+document
+.getElementById('file')
+.onchange = function(e){
+
+const f = e.target.files[0];
+
+if(f){
+
+document
+.getElementById('photo')
+.value = f.name;
+
+}
+
+};
+
+/* =========================
+SUBMIT INCIDENT
+========================= */
+
+async function submitCrime(){
+
+try{
+
+const response = await fetch('/criminals',{
+
+method:'POST',
+
+headers:{
+'Content-Type':'application/json'
+},
+
+body:JSON.stringify({
+
+full_name:
+document.getElementById('full_name').value,
+
+also_known_as:
+document.getElementById('also_known_as').value,
+
+tribe:
+document.getElementById('tribe').value,
+
+age:
+document.getElementById('age').value,
+
+gender:
+document.getElementById('gender').value,
+
+marital_status:
+document.getElementById('marital_status').value,
+
+village:
+document.getElementById('village').value,
+
+ward:
+document.getElementById('ward').value,
+
+district:
+document.getElementById('district').value,
+
+region:
+document.getElementById('region').value,
+
+weapons_used:
+document.getElementById('weapons_used').value,
+
+area_of_arrest:
+document.getElementById('area_of_arrest').value,
+
+coord_lat:
+document.getElementById('lat').value,
+
+coord_lng:
+document.getElementById('lng').value,
+
+witnesses:
+document.getElementById('witnesses').value,
+
+case_type:
+document.getElementById('case_type').value,
+
+case_number:
+document.getElementById('case_number').value,
+
+court_status:
+document.getElementById('court_status').value,
+
+sentence:
+document.getElementById('sentence').value,
+
+photo:
+document.getElementById('photo').value,
+
+date_of_arrest:
+document.getElementById('date_of_arrest').value
+
+})
+
+});
+
+const data = await response.json();
+
+console.log(data);
+
+/* SUCCESS */
+
+if(response.ok){
+
+alert(data.message || 'Saved Successfully');
+
+location.reload();
+
+}
+
+/* ERROR */
+
+else{
+
+alert(data.error || 'Failed To Save');
+
+console.log(data);
+
+}
+
+}catch(err){
+
+console.log(err);
+
+alert('Server Error');
+
+}
+
+}
+
+</script>
+
+</body>
+
+</html>

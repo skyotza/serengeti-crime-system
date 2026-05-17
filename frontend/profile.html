@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Criminal Profile</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+            background: #f4f4f4;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            max-width: 600px;
+        }
+
+        img {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border: 2px solid #333;
+        }
+
+        .row {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>👤 Criminal Full Profile</h2>
+
+<div class="container" id="profile"></div>
+
+<script>
+
+const id = new URLSearchParams(window.location.search).get("id");
+
+async function loadProfile() {
+
+    const res = await fetch("http://localhost:3000/criminal/" + id);
+    const c = await res.json();
+
+    document.getElementById("profile").innerHTML = `
+        <img src="http://localhost:3000/uploads/${c.photo}">
+
+        <div class="row"><b>Name:</b> ${c.full_name}</div>
+        <div class="row"><b>Alias:</b> ${c.also_known_as}</div>
+        <div class="row"><b>Tribe:</b> ${c.tribe}</div>
+        <div class="row"><b>Age:</b> ${c.age}</div>
+        <div class="row"><b>Gender:</b> ${c.gender}</div>
+        <div class="row"><b>Marital Status:</b> ${c.marital_status}</div>
+        <div class="row"><b>Village:</b> ${c.village}</div>
+        <div class="row"><b>Ward:</b> ${c.ward}</div>
+        <div class="row"><b>District:</b> ${c.district}</div>
+        <div class="row"><b>Region:</b> ${c.region}</div>
+        <div class="row"><b>Weapons:</b> ${c.weapons_used}</div>
+        <div class="row"><b>Arrest Area:</b> ${c.area_of_arrest}</div>
+        <div class="row"><b>Case Type:</b> ${c.case_type}</div>
+        <div class="row"><b>Case Number:</b> ${c.case_number}</div>
+        <div class="row"><b>Court Status:</b> ${c.court_status}</div>
+        <div class="row"><b>Sentence:</b> ${c.sentence}</div>
+    `;
+}
+
+loadProfile();
+
+</script>
+
+</body>
+</html>
