@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Serengeti Crime Form</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+
+/* BODY */
+body{
+margin:0;
+font-family:Arial;
+background:linear-gradient(135deg,#0b3d2e,#145a32,#1e8449);
+padding:20px;
+}
+
+/* DOT */
+.connection-dot{
+position:fixed;
+top:12px;
+right:12px;
+width:14px;
+height:14px;
+border-radius:50%;
+z-index:9999;
+border:2px solid white;
+background:#27ae60;
+box-shadow:0 0 10px rgba(0,0,0,0.4);
+}
+
+/* CONTAINER */
+.container{
+max-width:1100px;
+margin:auto;
+background:white;
+padding:25px;
+border-radius:18px;
+}
+
+/* HEADER */
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+}
+
+/* SECTION */
+.section{
+margin-top:20px;
+padding:15px;
+border:2px solid #27ae60;
+border-radius:12px;
+background:#f7fff7;
+}
+
+.form-grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:15px;
+}
+
+.full{grid-column:1/-1;}
+
+input,select,textarea{
+width:100%;
+padding:10px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+/* SAVE */
+.save-btn{
+margin-top:20px;
+width:100%;
+padding:15px;
+background:#27ae60;
+color:white;
+border:none;
+border-radius:10px;
+font-weight:bold;
+}
+
+/* 🔥 DUPLICATE BUTTON (VISIBLE ALWAYS) */
+.dup-btn{
+margin-top:20px;
+width:100%;
+padding:15px;
+background:#8e44ad;
+color:white;
+border:none;
+border-radius:10px;
+font-weight:bold;
+font-size:16px;
+cursor:pointer;
+}
+
+/* DUP BOX */
+.dup-box{
+display:none;
+margin-top:15px;
+padding:15px;
+border:2px solid #f1c40f;
+background:#fff8d6;
+border-radius:10px;
+}
+
+.dup-actions{
+display:flex;
+gap:10px;
+margin-top:10px;
+}
+
+.yes{background:#27ae60;color:white;padding:10px;border:none;}
+.no{background:#e74c3c;color:white;padding:10px;border:none;}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- DOT -->
+<div class="connection-dot" id="dot"></div>
+
+<div class="container">
+
+<div class="header">
+<h1>🦁 Serengeti Crime Form</h1>
+<button onclick="location.href='/dashboard'">⬅ Dashboard</button>
+</div>
+
+<form id="crimeForm">
+
+<!-- PERSONAL -->
+<div class="section">
+
+<h3>👤 Personal</h3>
+
+<div class="form-grid">
+
+<input id="full_name" placeholder="Full Name">
+<input id="also_known_as" placeholder="Alias">
+<input id="nin" placeholder="NIN">
+<input id="age" type="number" placeholder="Age">
+
+</div>
+</div>
+
+<!-- LOCATION -->
+<div class="section">
+
+<h3>📍 Location</h3>
+
+<div class="form-grid">
+
+<input id="village">
+<input id="district">
+<input id="region">
+<input id="lat">
+<input id="lng">
+
+</div>
+</div>
+
+<!-- CRIME -->
+<div class="section">
+
+<h3>⚖ Crime</h3>
+
+<div class="form-grid">
+
+<select id="case_type">
+<option>Poaching</option>
+<option>Logging</option>
+<option>Mining</option>
+<option>Fishing</option>
+<option>Trafficking</option>
+<option>Encroachment</option>
+</select>
+
+<input id="case_number">
+<input id="court_status">
+<input id="sentence">
+
+</div>
+</div>
+
+<!-- 🔥 DUPLICATE BUTTON -->
+<button type="button" class="dup-btn" onclick="checkDuplicateNow()">
+🔎 CHECK DUPLICATE (NAME / NIN)
+</button>
+
+<!-- DUP BOX -->
+<div id="dupBox" class="dup-box">
+
+<h3>⚠ Duplicate Found</h3>
+<div id="dupInfo"></div>
+
+<div class="dup-actions">
+<button type="button" class="yes" onclick="forceSave()">YES SAVE ANYWAY</button>
+<button type="button" class="no" onclick="cancelSave()">CANCEL</button>
+</div>
+
+</div>
+
+<!-- SAVE -->
+<button type="submit" class="save-btn">
+💾 SAVE CRIME RECORD
+</button>
+
+</form>
+
+</div>
+
+<script>
+
+/* DOT */
+function updateDot(){
+document.getElementById("dot").style.background =
+navigator.onLine ? "#27ae60" : "#e74c3c";
+}
+window.addEventListener("online",updateDot);
+window.addEventListener("offline",updateDot);
+updateDot();
+
+/* GET DATA */
+function getData(){
+return {
+full_name:full_name.value,
+nin:nin.value,
+age:age.value,
+village:village.value,
+district:district.value,
+region:region.value,
+coord_lat:lat.value,
+coord_lng:lng.value,
+case_type:case_type.value,
+case_number:case_number.value,
+court_status:court_status.value,
+sentence:sentence.value
+};
+}
+
+/* CHECK DUPLICATE */
+async function checkDuplicate(full_name,nin){
+
+let res = await fetch('/criminals');
+let data = await res.json();
+
+return data.find(c =>
+(c.full_name && full_name &&
+c.full_name.toLowerCase().trim() === full_name.toLowerCase().trim())
+||
+(c.nin && nin &&
+c.nin.trim() === nin.trim())
+);
+
+}
+
+/* BUTTON CLICK */
+async function checkDuplicateNow(){
+
+let d = await checkDuplicate(full_name.value,nin.value);
+
+if(d){
+dupInfo.innerHTML =
+"Name: " + d.full_name + "<br>NIN: " + d.nin;
+dupBox.style.display="block";
+}else{
+alert("✔ No duplicate found");
+}
+
+}
+
+/* SAVE FLOW */
+let pending=null;
+
+crimeForm.onsubmit = async e=>{
+e.preventDefault();
+
+let data=getData();
+
+let d = await checkDuplicate(data.full_name,data.nin);
+
+if(d){
+pending=data;
+dupInfo.innerHTML =
+"Name: " + d.full_name + "<br>NIN: " + d.nin;
+dupBox.style.display="block";
+return;
+}
+
+save(data);
+};
+
+function forceSave(){
+dupBox.style.display="none";
+if(pending) save(pending);
+}
+
+function cancelSave(){
+dupBox.style.display="none";
+pending=null;
+}
+
+async function save(data){
+
+await fetch('/criminals',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify(data)
+});
+
+alert("Saved successfully");
+location.href="/dashboard";
+}
+
+</script>
+
+</body>
+</html>

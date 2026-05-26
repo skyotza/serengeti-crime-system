@@ -1,44 +1,177 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
-<title>Serengeti NP Crime Registration Form</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Serengeti NP Crime Form</title>
+
+<!-- PWA SUPPORT -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0b3d2e">
 
 <style>
 
+*{margin:0;padding:0;box-sizing:border-box;}
+
 body{
-font-family:Arial;
-background:#f4f4f4;
+font-family:Arial,sans-serif;
+background:linear-gradient(135deg,#0b3d2e,#145a32,#1e8449);
 padding:20px;
 }
 
-.box{
-max-width:1000px;
+.container{
+max-width:1300px;
 margin:auto;
 background:white;
-padding:20px;
-border-radius:10px;
+border-radius:22px;
+overflow:hidden;
+box-shadow:0 20px 40px rgba(0,0,0,0.35);
 }
 
-input,select,button,textarea{
+.header{
+background:linear-gradient(90deg,#0b3d2e,#145a32);
+color:white;
+padding:25px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+gap:10px;
+}
+
+.header h1{font-size:32px;}
+
+.dashboard-btn{
+background:#f1c40f;
+color:black;
+border:none;
+padding:12px 20px;
+border-radius:12px;
+font-weight:bold;
+cursor:pointer;
+font-size:15px;
+}
+
+.content{padding:25px;}
+
+.section{
+margin-bottom:28px;
+background:white;
+padding:22px;
+border-radius:18px;
+box-shadow:0 5px 18px rgba(0,0,0,0.08);
+border-left:7px solid #27ae60;
+}
+
+.section h2{
+margin-bottom:20px;
+color:#145a32;
+font-size:25px;
+}
+
+.form-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+gap:18px;
+}
+
+label{
+display:block;
+margin-bottom:7px;
+font-weight:bold;
+color:#145a32;
+font-size:14px;
+}
+
+input,select,textarea{
 width:100%;
-padding:10px;
-margin-top:8px;
-border-radius:5px;
-border:1px solid #ccc;
+padding:14px;
+border-radius:12px;
+border:1px solid #dcdcdc;
+background:#fafafa;
+font-size:15px;
+outline:none;
 }
 
-button{
-background:green;
+textarea{height:110px;resize:none;}
+
+.gps-btn,.save-btn{
+margin-top:15px;
 color:white;
 border:none;
+padding:14px 20px;
+border-radius:12px;
 cursor:pointer;
 font-weight:bold;
+font-size:15px;
 }
 
-h2{
-color:green;
+.gps-btn{background:#3498db;}
+
+.save-btn{
+background:linear-gradient(90deg,#27ae60,#2ecc71);
+font-size:18px;
+padding:18px 35px;
+}
+
+.image-box{
+background:#eef8ef;
+padding:18px;
+border-radius:18px;
+text-align:center;
+}
+
+#preview{
+width:100%;
+max-height:340px;
+object-fit:cover;
+margin-top:15px;
+border-radius:14px;
+display:none;
+border:4px solid #27ae60;
+}
+
+.upload-label{
+background:#27ae60;
+color:white;
+padding:14px;
+border-radius:12px;
+cursor:pointer;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+}
+
+.save-section{text-align:center;margin-top:25px;}
+
+.status-box{
+position:fixed;
+top:90px;
+right:10px;
+width:18px;height:18px;
+border-radius:50%;
+border:2px solid white;
+z-index:9999;
+}
+
+.online{background:#27ae60;}
+.offline{background:#e74c3c;}
+
+.sync-box{
+position:fixed;
+top:120px;
+right:10px;
+padding:6px 10px;
+border-radius:10px;
+font-size:11px;
+font-weight:bold;
+background:#f39c12;
+color:white;
+z-index:9999;
+display:none;
 }
 
 </style>
@@ -47,256 +180,286 @@ color:green;
 
 <body>
 
-<div class="box">
+<div id="connectionStatus" class="status-box online"></div>
+<div id="syncBox" class="sync-box">🔄 Syncing...</div>
 
-<button onclick="location.href='/dashboard'">
-Go Dashboard
-</button>
+<div class="container">
 
-<h2>Serengeti NP Crime Registration Form</h2>
+<div class="header">
+<h1>🦁 Serengeti NP Crime Form</h1>
+<button class="dashboard-btn" onclick="location.href='/dashboard'">⬅ Dashboard</button>
+</div>
 
-<input id="full_name" placeholder="Full Name">
+<div class="content">
 
-<input id="also_known_as" placeholder="Also Known As">
+<form id="crimeForm">
 
-<input id="tribe" placeholder="Tribe">
+<!-- PERSONAL -->
+<div class="section">
+<h2>👤 Personal Information</h2>
 
-<input id="age" placeholder="Age">
+<div class="form-grid">
 
+<div><label>Full Name</label><input id="full_name"></div>
+<div><label>Alias / Nickname</label><input id="also_known_as"></div>
+<div><label>NIN Number</label><input id="nin"></div>
+<div><label>Age</label><input type="number" id="age"></div>
+
+<div>
+<label>Gender</label>
 <select id="gender">
-<option value="">Select Gender</option>
 <option>Male</option>
 <option>Female</option>
 </select>
+</div>
 
-<input id="marital_status" placeholder="Marital Status">
-
-<input id="village" placeholder="Village">
-
-<input id="ward" placeholder="Ward">
-
-<input id="district" placeholder="District">
-
-<input id="region" placeholder="Region">
-
-<input id="weapons_used" placeholder="Weapons Used">
-
-<input id="area_of_arrest" placeholder="Area of Arrest">
-
-<input id="lat" placeholder="Latitude">
-
-<input id="lng" placeholder="Longitude">
-
-<input id="witnesses" placeholder="Witnesses">
-
-<select id="case_type">
-
-<option value="">Select Crime Type</option>
-
-<option>Illegal Fishing</option>
-<option>Illegal Grazing</option>
-<option>Illegal Mining</option>
-
-<option>Poaching (Subsistence)</option>
-<option>Poaching (Commercial)</option>
-<option>Poaching (Ivory/Horn)</option>
-
-<option>Bushmeat Hunting</option>
-
-<option>Night Hunting</option>
-
-<option>Snaring / Traps</option>
-
-<option>Wildlife Trafficking</option>
-
-<option>Deforestation</option>
-
-<option>Illegal Logging</option>
-
-<option>Poisoning</option>
-
-<option>Human-Wildlife Conflict</option>
-
-<option>Illegal Entry</option>
-
-<option>Encroachment</option>
-
-<option>Vehicle Off-road Damage</option>
-
-<option>Weapon Possession (Illegal)</option>
-
-<option>Arson / Burning Vegetation</option>
-
+<div>
+<label>Religion</label>
+<select id="religion">
+<option>Christian</option>
+<option>Muslim</option>
+<option>Traditional Beliefs</option>
+<option>Other</option>
 </select>
+</div>
 
-<input id="case_number" placeholder="Case Number">
+<div><label>Education / Skills</label><input id="education"></div>
 
-<input id="court_status" placeholder="Court Status">
+</div>
+</div>
 
-<input id="sentence" placeholder="Sentence">
+<!-- LOCATION -->
+<div class="section">
+<h2>📍 Location Information</h2>
 
-<input type="date" id="date_of_arrest">
+<div class="form-grid">
 
-<input type="file" id="file" style="display:none">
+<div><label>Village</label><input id="village"></div>
+<div><label>Ward</label><input id="ward"></div>
+<div><label>District</label><input id="district"></div>
+<div><label>Region</label><input id="region"></div>
+<div><label>Latitude</label><input id="lat"></div>
+<div><label>Longitude</label><input id="lng"></div>
 
-<button onclick="document.getElementById('file').click()">
-Upload Photo
-</button>
+</div>
 
-<input
-id="photo"
-readonly
-placeholder="Photo filename">
-
-<button onclick="submitCrime()">
-Submit Incident
+<button type="button" class="gps-btn" onclick="getGPS()">
+📍 Auto Fill GPS Coordinates
 </button>
 
 </div>
 
+<!-- CRIME -->
+<div class="section">
+<h2>⚖ Crime Information</h2>
+
+<div class="form-grid">
+
+<div>
+<label>Crime Type</label>
+<select id="case_type">
+
+<option>Poaching</option>
+<option>Commercial Poaching</option>
+<option>Subsistence Poaching</option>
+<option>Bushmeat Hunting</option>
+<option>Snaring</option>
+<option>Wildlife Trafficking</option>
+<option>Illegal Logging</option>
+<option>Charcoal Burning</option>
+<option>Illegal Grazing</option>
+<option>Encroachment</option>
+<option>Illegal Settlement</option>
+<option>Illegal Mining</option>
+<option>Sand Harvesting</option>
+<option>Illegal Fishing</option>
+<option>Poison Fishing</option>
+<option>Armed Intrusion</option>
+<option>Illegal Entry</option>
+<option>Trespassing</option>
+<option>Smuggling</option>
+<option>Corruption</option>
+<option>Bribery</option>
+<option>Assault on Ranger</option>
+<option>Possession of Illegal Weapons</option>
+<option>Banditry</option>
+<option>Human Trafficking</option>
+<option>Drug Trafficking</option>
+<option>Arson</option>
+<option>Forest Fire</option>
+<option>Human-Wildlife Conflict</option>
+<option>Retaliatory Killing</option>
+<option>Crop Destruction Incident</option>
+<option>Livestock Predation</option>
+<option>Illegal Tourism Activity</option>
+<option>Off-road Driving</option>
+<option>Vandalism</option>
+<option>Littering</option>
+<option>Noise Pollution</option>
+<option>Forgery</option>
+<option>Cybercrime</option>
+<option>Unknown Crime</option>
+<option>Other</option>
+
+</select>
+</div>
+
+<div><label>Case Number</label><input id="case_number"></div>
+<div><label>Date of Arrest</label><input type="date" id="date_of_arrest"></div>
+<div><label>Time of Arrest</label><input type="time" id="time_of_arrest"></div>
+
+<!-- ✅ HEAD OF PATROL TEAM (POSITION FIXED HERE) -->
+<div>
+<label>Head of Patrol Team</label>
+<input id="patrol_head">
+</div>
+
+<div><label>Area of Arrest</label><input id="area_of_arrest"></div>
+<div><label>Court Status</label><input id="court_status"></div>
+<div><label>Sentence</label><input id="sentence"></div>
+
+<div style="grid-column:1/-1;">
+<label>Incident Notes</label>
+<textarea id="notes"></textarea>
+</div>
+
+</div>
+</div>
+
+<!-- EVIDENCE -->
+<div class="section">
+<h2>📸 Evidence Collection</h2>
+
+<div class="image-box">
+
+<img id="preview">
+<input type="hidden" id="photo">
+
+<label class="upload-label">
+📷 Take / Upload Photo
+<input type="file" id="photoFile" accept="image/*" capture="environment" style="display:none">
+</label>
+
+</div>
+</div>
+
+<!-- SAVE -->
+<div class="save-section">
+<button type="submit" class="save-btn">💾 Save Crime Record</button>
+</div>
+
+</form>
+
+</div>
+</div>
+
 <script>
 
-/* =========================
-PHOTO PICKER
-========================= */
+/* GPS */
+function getGPS(){
 
-document
-.getElementById('file')
-.onchange = function(e){
+if(!navigator.geolocation){
+alert("GPS not supported");
+return;
+}
 
-const f = e.target.files[0];
-
-if(f){
-
-document
-.getElementById('photo')
-.value = f.name;
+navigator.geolocation.getCurrentPosition(pos=>{
+document.getElementById("lat").value = pos.coords.latitude.toFixed(6);
+document.getElementById("lng").value = pos.coords.longitude.toFixed(6);
+alert("GPS Captured");
+},err=>{
+alert("GPS failed");
+console.log(err);
+},{enableHighAccuracy:false,timeout:60000});
 
 }
 
+/* offline sync */
+let offlineQueue = JSON.parse(localStorage.getItem("offlineCrimes") || "[]");
+
+async function syncOfflineData(){
+if(!navigator.onLine || offlineQueue.length===0) return;
+
+document.getElementById("syncBox").style.display="block";
+
+let synced=[];
+for(let i=0;i<offlineQueue.length;i++){
+try{
+const res = await fetch('/criminals',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify(offlineQueue[i])
+});
+if(res.ok) synced.push(i);
+}catch(e){}
+}
+
+offlineQueue = offlineQueue.filter((_,i)=>!synced.includes(i));
+localStorage.setItem("offlineCrimes",JSON.stringify(offlineQueue));
+document.getElementById("syncBox").style.display="none";
+}
+
+window.addEventListener('online',syncOfflineData);
+
+/* image */
+document.getElementById("photoFile").onchange=function(e){
+const file=e.target.files[0];
+if(!file)return;
+const reader=new FileReader();
+reader.onload=function(){
+document.getElementById("preview").src=reader.result;
+document.getElementById("preview").style.display="block";
+document.getElementById("photo").value=reader.result;
+};
+reader.readAsDataURL(file);
 };
 
-/* =========================
-SUBMIT INCIDENT
-========================= */
+/* submit */
+document.getElementById("crimeForm").addEventListener("submit",async function(e){
+e.preventDefault();
 
-async function submitCrime(){
+const data={
+full_name:full_name.value,
+also_known_as:also_known_as.value,
+nin:nin.value,
+age:age.value,
+gender:gender.value,
+religion:religion.value,
+education:education.value,
+patrol_head:patrol_head.value,
+village:village.value,
+ward:ward.value,
+district:district.value,
+region:region.value,
+coord_lat:lat.value,
+coord_lng:lng.value,
+case_type:case_type.value,
+case_number:case_number.value,
+date_of_arrest:date_of_arrest.value,
+time_of_arrest:time_of_arrest.value,
+area_of_arrest:area_of_arrest.value,
+court_status:court_status.value,
+sentence:sentence.value,
+notes:notes.value,
+photo:photo.value
+};
 
-try{
-
-const response = await fetch('/criminals',{
-
-method:'POST',
-
-headers:{
-'Content-Type':'application/json'
-},
-
-body:JSON.stringify({
-
-full_name:
-document.getElementById('full_name').value,
-
-also_known_as:
-document.getElementById('also_known_as').value,
-
-tribe:
-document.getElementById('tribe').value,
-
-age:
-document.getElementById('age').value,
-
-gender:
-document.getElementById('gender').value,
-
-marital_status:
-document.getElementById('marital_status').value,
-
-village:
-document.getElementById('village').value,
-
-ward:
-document.getElementById('ward').value,
-
-district:
-document.getElementById('district').value,
-
-region:
-document.getElementById('region').value,
-
-weapons_used:
-document.getElementById('weapons_used').value,
-
-area_of_arrest:
-document.getElementById('area_of_arrest').value,
-
-coord_lat:
-document.getElementById('lat').value,
-
-coord_lng:
-document.getElementById('lng').value,
-
-witnesses:
-document.getElementById('witnesses').value,
-
-case_type:
-document.getElementById('case_type').value,
-
-case_number:
-document.getElementById('case_number').value,
-
-court_status:
-document.getElementById('court_status').value,
-
-sentence:
-document.getElementById('sentence').value,
-
-photo:
-document.getElementById('photo').value,
-
-date_of_arrest:
-document.getElementById('date_of_arrest').value
-
-})
+if(navigator.onLine){
+await fetch('/criminals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+alert("Saved");
+window.location.href='/dashboard';
+}else{
+offlineQueue.push(data);
+localStorage.setItem("offlineCrimes",JSON.stringify(offlineQueue));
+alert("Saved offline");
+window.location.href='/dashboard';
+}
 
 });
 
-const data = await response.json();
-
-console.log(data);
-
-/* SUCCESS */
-
-if(response.ok){
-
-alert(data.message || 'Saved Successfully');
-
-location.reload();
-
-}
-
-/* ERROR */
-
-else{
-
-alert(data.error || 'Failed To Save');
-
-console.log(data);
-
-}
-
-}catch(err){
-
-console.log(err);
-
-alert('Server Error');
-
-}
-
-}
+syncOfflineData();
 
 </script>
 
 </body>
-
 </html>

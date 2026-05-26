@@ -1,23 +1,26 @@
 {
-  "name": "backend",
+  "name": "serengeti-crime-system",
   "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
+  "description": "Serengeti National Park Crime Monitoring System",
+  "main": "server/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server/server.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "GIS",
+    "Crime",
+    "Serengeti",
+    "Wildlife",
+    "Dashboard"
+  ],
+  "author": "Serengeti NP",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@tmcw/togeojson": "^7.1.2",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
-    "express": "^5.2.1",
+    "express": "^4.19.2",
     "express-session": "^1.19.0",
-    "mongoose": "^9.4.1",
     "pg": "^8.20.0",
     "xmldom": "^0.6.0"
   }
