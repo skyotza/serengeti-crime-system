@@ -38,24 +38,34 @@ maxAge:1000*60*60*24
    DATABASE
 ======================================================= */
 
-const isRender = process.env.DATABASE_URL;
+const DATABASE_URL = process.env.DATABASE_URL;
 
-const pool = isRender
+let pool;
 
-? new Pool({
-connectionString: process.env.DATABASE_URL,
+if (DATABASE_URL) {
+
+pool = new Pool({
+connectionString: DATABASE_URL,
 ssl: {
 rejectUnauthorized: false
 }
-})
+});
 
-: new Pool({
+console.log("CONNECTED TO RENDER POSTGRESQL");
+
+} else {
+
+pool = new Pool({
 user:'postgres',
 host:'localhost',
 database:'serengeti_np_criminal_system_db',
 password:'control2026_',
 port:5432
 });
+
+console.log("CONNECTED TO LOCAL POSTGRESQL");
+
+}
 
 /* =======================================================
    AUTH
@@ -624,6 +634,19 @@ path.join(__dirname,'../frontend')
 ));
 
 /* =======================================================
+   HEALTH CHECK
+======================================================= */
+
+app.get('/health',(req,res)=>{
+
+res.json({
+status:"OK",
+server:"Serengeti Crime System"
+});
+
+});
+
+/* =======================================================
    SERVER
 ======================================================= */
 
@@ -636,7 +659,7 @@ const hasSSL =
 fs.existsSync(keyPath) &&
 fs.existsSync(certPath);
 
-if(hasSSL && !isRender){
+if(hasSSL && !DATABASE_URL){
 
 const sslOptions = {
 key: fs.readFileSync(keyPath),
