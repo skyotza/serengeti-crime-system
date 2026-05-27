@@ -2,10 +2,10 @@
   "name": "serengeti-crime-system",
   "version": "1.0.0",
   "description": "Serengeti National Park Crime Monitoring System",
-  "main": "server/server.js",
+  "main": "backend/server.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node server/server.js"
+    "start": "node backend/server.js"
   },
   "keywords": [
     "GIS",
