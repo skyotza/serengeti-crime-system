@@ -38,7 +38,18 @@ maxAge:1000*60*60*24
    DATABASE
 ======================================================= */
 
-const pool = new Pool({
+const isRender = process.env.DATABASE_URL;
+
+const pool = isRender
+
+? new Pool({
+connectionString: process.env.DATABASE_URL,
+ssl: {
+rejectUnauthorized: false
+}
+})
+
+: new Pool({
 user:'postgres',
 host:'localhost',
 database:'serengeti_np_criminal_system_db',
@@ -239,13 +250,14 @@ case_type,
 case_number,
 court_status,
 sentence,
-photo
+photo,
+nin
 )
 VALUES(
 $1,$2,$3,$4,$5,
 $6,$7,$8,$9,$10,
 $11,$12,$13,$14,$15,
-$16,$17,$18,$19,$20
+$16,$17,$18,$19,$20,$21
 )
 `,[
 d.full_name,
@@ -267,7 +279,8 @@ d.case_type,
 d.case_number,
 d.court_status,
 d.sentence,
-d.photo
+d.photo,
+d.nin
 ]);
 
 res.json({
@@ -280,6 +293,65 @@ console.log("INSERT ERROR:",err);
 
 res.status(500).json({
 error:"Insert failed"
+});
+
+}
+
+});
+
+/* =======================================================
+   EDIT CRIMINAL
+======================================================= */
+
+app.put('/criminals/:id',auth,async(req,res)=>{
+
+try{
+
+if(req.session.user.role!=="admin"){
+
+return res.status(403).json({
+error:"Admin only"
+});
+
+}
+
+const d = req.body;
+
+await pool.query(`
+UPDATE criminals SET
+full_name=$1,
+case_type=$2,
+village=$3,
+region=$4,
+court_status=$5,
+case_number=$6,
+coord_lat=$7,
+coord_lng=$8,
+nin=$9
+WHERE id=$10
+`,[
+d.full_name,
+d.case_type,
+d.village,
+d.region,
+d.court_status,
+d.case_number,
+d.coord_lat,
+d.coord_lng,
+d.nin,
+req.params.id
+]);
+
+res.json({
+success:true
+});
+
+}catch(err){
+
+console.log("EDIT ERROR:",err);
+
+res.status(500).json({
+error:"Edit failed"
 });
 
 }
@@ -327,13 +399,14 @@ case_type,
 case_number,
 court_status,
 sentence,
-photo
+photo,
+nin
 )
 VALUES(
 $1,$2,$3,$4,$5,
 $6,$7,$8,$9,$10,
 $11,$12,$13,$14,$15,
-$16,$17,$18,$19,$20
+$16,$17,$18,$19,$20,$21
 )
 `,[
 d.full_name,
@@ -355,7 +428,8 @@ d.case_type,
 d.case_number,
 d.court_status,
 d.sentence,
-d.photo
+d.photo,
+d.nin
 ]);
 
 }
@@ -457,14 +531,6 @@ let { name,icon,lat,lng } = req.body;
 lat=parseFloat(lat);
 lng=parseFloat(lng);
 
-if(!name || !icon || isNaN(lat) || isNaN(lng)){
-
-return res.status(400).json({
-error:"Invalid data"
-});
-
-}
-
 await pool.query(`
 INSERT INTO permanent_marks(
 name,
@@ -530,144 +596,6 @@ error:"Delete failed"
 });
 
 /* =======================================================
-   CREATE USER
-======================================================= */
-
-app.post('/create-user',auth,async(req,res)=>{
-
-try{
-
-if(req.session.user.role!=="admin"){
-
-return res.status(403).json({
-error:"Admin only"
-});
-
-}
-
-const {
-username,
-password,
-role
-} = req.body;
-
-if(!username || !password){
-
-return res.status(400).json({
-error:"Missing fields"
-});
-
-}
-
-const exists = await pool.query(
-"SELECT * FROM users WHERE username=$1",
-[username]
-);
-
-if(exists.rows.length>0){
-
-return res.status(400).json({
-error:"Username exists"
-});
-
-}
-
-const hashed = await bcrypt.hash(password,10);
-
-await pool.query(`
-INSERT INTO users(
-username,
-password,
-role
-)
-VALUES($1,$2,$3)
-`,[
-username,
-hashed,
-role || "user"
-]);
-
-res.json({
-success:true
-});
-
-}catch(err){
-
-console.log("CREATE USER ERROR:",err);
-
-res.status(500).json({
-error:"Create user failed"
-});
-
-}
-
-});
-
-/* =======================================================
-   CHANGE PASSWORD
-======================================================= */
-
-app.post('/change-password',auth,async(req,res)=>{
-
-try{
-
-const {
-oldPassword,
-newPassword
-} = req.body;
-
-const r = await pool.query(
-"SELECT * FROM users WHERE id=$1",
-[req.session.user.id]
-);
-
-if(r.rows.length===0){
-
-return res.status(404).json({
-error:"User not found"
-});
-
-}
-
-const user = r.rows[0];
-
-const ok = await bcrypt.compare(
-oldPassword,
-user.password
-);
-
-if(!ok){
-
-return res.status(400).json({
-error:"Wrong old password"
-});
-
-}
-
-const hashed = await bcrypt.hash(newPassword,10);
-
-await pool.query(
-"UPDATE users SET password=$1 WHERE id=$2",
-[hashed,user.id]
-);
-
-res.json({
-success:true
-});
-
-}catch(err){
-
-console.log("CHANGE PASSWORD ERROR:",err);
-
-res.status(500).json({
-error:"Password change failed"
-});
-
-}
-
-});
-
-/* =======================================================
    GEOFENCE
 ======================================================= */
 
@@ -683,24 +611,12 @@ res.setHeader(
 'application/geo+json'
 );
 
-res.sendFile(filePath,(err)=>{
-
-if(err){
-
-console.log("GEOFENCE ERROR:",err);
-
-res.status(500).json({
-error:"GeoJSON file missing"
-});
-
-}
-
-});
+res.sendFile(filePath);
 
 });
 
 /* =======================================================
-   STATIC FRONTEND FILES
+   STATIC FILES
 ======================================================= */
 
 app.use(express.static(
@@ -708,29 +624,23 @@ path.join(__dirname,'../frontend')
 ));
 
 /* =======================================================
-   HTTPS / DEPLOYMENT SAFE SERVER
+   SERVER
 ======================================================= */
 
 const PORT = process.env.PORT || 3000;
 
 const keyPath = path.join(__dirname,'../key.pem');
-
 const certPath = path.join(__dirname,'../cert.pem');
 
 const hasSSL =
 fs.existsSync(keyPath) &&
 fs.existsSync(certPath);
 
-if(hasSSL){
-
-/* ================= LOCAL HTTPS ================= */
+if(hasSSL && !isRender){
 
 const sslOptions = {
-
 key: fs.readFileSync(keyPath),
-
 cert: fs.readFileSync(certPath)
-
 };
 
 https.createServer(
@@ -741,15 +651,11 @@ app
 console.log("================================");
 console.log("SERENGETI HTTPS SERVER RUNNING");
 console.log(`https://localhost:${PORT}`);
-console.log("GPS + CAMERA ENABLED");
-console.log("Offline Sync Enabled");
 console.log("================================");
 
 });
 
 }else{
-
-/* ================= DEPLOYMENT HTTP ================= */
 
 app.listen(PORT,'0.0.0.0',()=>{
 

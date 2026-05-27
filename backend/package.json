@@ -4,9 +4,11 @@
   "description": "Serengeti National Park Crime Monitoring System",
   "main": "backend/server.js",
   "type": "commonjs",
+
   "scripts": {
     "start": "node backend/server.js"
   },
+
   "keywords": [
     "GIS",
     "Crime",
@@ -14,8 +16,10 @@
     "Wildlife",
     "Dashboard"
   ],
+
   "author": "Serengeti NP",
   "license": "ISC",
+
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
