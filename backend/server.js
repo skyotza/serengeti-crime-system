@@ -60,6 +60,34 @@ console.log(
     ? "CONNECTED TO RENDER POSTGRESQL"
     : "CONNECTED TO LOCAL POSTGRESQL"
 );
+/* =======================================================
+   DEBUG DATABASE TABLES
+======================================================= */
+
+app.get('/debug-tables', async (req, res) => {
+
+  try {
+
+    const result = await pool.query(`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema='public'
+      ORDER BY table_name
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+
+    console.log("DEBUG TABLES ERROR:", err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+
+});
 
 /* =======================================================
    AUTH
