@@ -289,12 +289,12 @@ app.post('/login', async (req, res) => {
   try {
 
     const { username, password } = req.body;
-
+console.log("LOGIN ATTEMPT:", username);
     const r = await pool.query(
       "SELECT * FROM users WHERE username=$1",
       [username]
     );
-
+console.log("FOUND USERS:", r.rows);
     if (r.rows.length === 0) {
 
       return res.send("User not found");
@@ -331,7 +331,6 @@ app.post('/login', async (req, res) => {
   }
 
 });
-
 /* =======================================================
    LOGOUT
 ======================================================= */
