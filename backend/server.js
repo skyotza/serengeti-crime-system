@@ -88,6 +88,67 @@ app.get('/debug-tables', async (req, res) => {
   }
 
 });
+app.get('/setup-db', async (req, res) => {
+
+  try {
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(100) UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role VARCHAR(50) DEFAULT 'user'
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS criminals (
+        id SERIAL PRIMARY KEY,
+        full_name TEXT,
+        also_known_as TEXT,
+        tribe TEXT,
+        age INTEGER,
+        gender TEXT,
+        marital_status TEXT,
+        village TEXT,
+        ward TEXT,
+        district TEXT,
+        region TEXT,
+        weapons_used TEXT,
+        area_of_arrest TEXT,
+        coord_lat DOUBLE PRECISION,
+        coord_lng DOUBLE PRECISION,
+        witnesses TEXT,
+        case_type TEXT,
+        case_number TEXT,
+        court_status TEXT,
+        sentence TEXT,
+        photo TEXT,
+        nin TEXT
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS permanent_marks (
+        id SERIAL PRIMARY KEY,
+        name TEXT,
+        icon TEXT,
+        lat DOUBLE PRECISION,
+        lng DOUBLE PRECISION
+      )
+    `);
+
+    res.send("DATABASE CREATED");
+
+  } catch(err) {
+
+    console.log(err);
+
+    res.status(500).send(err.message);
+
+  }
+
+});
 
 /* =======================================================
    AUTH
