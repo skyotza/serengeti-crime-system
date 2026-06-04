@@ -100,6 +100,82 @@ app.get('/setup-db', async (req, res) => {
         role VARCHAR(50) DEFAULT 'user'
       )
     `);
+    /* =======================================================
+   DEBUG USERS
+======================================================= */
+
+app.get('/debug-users-open', async (req, res) => {
+
+  try {
+
+    const result = await pool.query(`
+      SELECT id, username, role
+      FROM users
+      ORDER BY id
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+
+});
+
+/* =======================================================
+   CREATE ADMIN
+======================================================= */
+
+app.get('/create-admin', async (req, res) => {
+
+  try {
+
+    const exists = await pool.query(
+      "SELECT * FROM users WHERE username=$1",
+      ['admin']
+    );
+
+    if (exists.rows.length > 0) {
+
+      return res.send("Admin already exists");
+
+    }
+
+    const hashed = await bcrypt.hash(
+      'admin123',
+      10
+    );
+
+    await pool.query(`
+      INSERT INTO users(
+        username,
+        password,
+        role
+      )
+      VALUES($1,$2,$3)
+    `, [
+      'admin',
+      hashed,
+      'admin'
+    ]);
+
+    res.send("Admin created successfully");
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).send(err.message);
+
+  }
+
+});
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS criminals (
