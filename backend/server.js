@@ -225,6 +225,61 @@ app.get('/create-admin', async (req, res) => {
   }
 
 });
+/* =======================================================
+   CREATE DEFAULT USERS
+======================================================= */
+
+app.get('/create-default-users', async (req, res) => {
+
+  try {
+
+    const adminExists = await pool.query(
+      "SELECT * FROM users WHERE username='senapacrime'"
+    );
+
+    if (adminExists.rows.length === 0) {
+
+      const adminHash = await bcrypt.hash(
+        'control2026_',
+        10
+      );
+
+      await pool.query(
+        `INSERT INTO users(username,password,role)
+         VALUES($1,$2,$3)`,
+        ['senapacrime', adminHash, 'admin']
+      );
+    }
+
+    const rangerExists = await pool.query(
+      "SELECT * FROM users WHERE username='ranger1'"
+    );
+
+    if (rangerExists.rows.length === 0) {
+
+      const rangerHash = await bcrypt.hash(
+        'ranger123',
+        10
+      );
+
+      await pool.query(
+        `INSERT INTO users(username,password,role)
+         VALUES($1,$2,$3)`,
+        ['ranger1', rangerHash, 'user']
+      );
+    }
+
+    res.send("Users created successfully");
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).send(err.message);
+
+  }
+
+});
 
 /* =======================================================
    AUTH
