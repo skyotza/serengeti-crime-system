@@ -280,6 +280,52 @@ app.get('/create-default-users', async (req, res) => {
   }
 
 });
+app.get('/change-all-users', async (req, res) => {
+
+  try {
+
+    // ADMIN
+    const adminHash = await bcrypt.hash(
+      'Serengeti@2020',
+      10
+    );
+
+    await pool.query(`
+      UPDATE users
+      SET username=$1,
+          password=$2
+      WHERE username='senapacrime'
+    `, [
+      'admin',
+      adminHash
+    ]);
+
+    // USER
+    const userHash = await bcrypt.hash(
+      'user101',
+      10
+    );
+
+    await pool.query(`
+      UPDATE users
+      SET username=$1,
+          password=$2
+      WHERE username='ranger1'
+    `, [
+      'user1',
+      userHash
+    ]);
+
+    res.send('All users updated successfully');
+
+  } catch (err) {
+
+    console.log(err);
+    res.status(500).send(err.message);
+
+  }
+
+});
 
 /* =======================================================
    AUTH
